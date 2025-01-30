@@ -1,31 +1,32 @@
 from typing import Any, Self
 import xml.etree.ElementTree as ET
 
-type Element = ET.Element
+
+class Element(ET.Element):
+    def __init__(self, attrib: dict[str, str] | None = None) -> None:
+        super().__init__(self.__class__.__name__, attrib if attrib is not None else {})
 
 
-class Instructions(ET.Element):
+class Instructions(Element):
     def __init__(self) -> None:
-        super().__init__("Instructions")
+        super().__init__()
 
 
-class WithStyle(ET.Element):
-    def __init__(
-        self, tag: str, style: str, attrib: dict[str, str] | None = None, **extra: str
-    ) -> None:
+class WithStyle(Element):
+    def __init__(self, style: str, attrib: dict[str, str] | None = None) -> None:
         base = {"style": style}
         if attrib is not None:
             base |= attrib
-        super().__init__(tag, base, **extra)
+        super().__init__(base)
 
 
-class Constant(ET.Element):
+class Constant(Element):
     def __init__(self, x: Any, data_type: str, can_replace: bool | None = None) -> None:
         attrs = {data_type: str(x)}
         if can_replace is not None:
             attrs |= {"canReplace": str(can_replace).lower()}
 
-        super().__init__(self.__class__.__name__, attrs)
+        super().__init__(attrs)
 
     @classmethod
     def from_number(cls, x: int | float) -> Self:
@@ -42,22 +43,21 @@ class Constant(ET.Element):
         return bool_const
 
 
-def If(test: Element, body: list[Element]):
-    el = WithStyle(If.__name__, "if")
-    el.append(test)
+class If(WithStyle):
+    def __init__(self, test: Element, body: list[Element]):
+        super().__init__("if")
+        self.append(test)
 
-    bd = Instructions()
-    for stmt in body:
-        bd.append(stmt)
+        bd = Instructions()
+        for stmt in body:
+            bd.append(stmt)
 
-    el.append(bd)
-
-    return el
+        self.append(bd)
 
 
 class BinaryOp(WithStyle):
     def __init__(self, style: str, op: str, left: Element, right: Element) -> None:
-        super().__init__(self.__class__.__name__, style, {"op": op})
+        super().__init__(style, {"op": op})
         self.append(left)
         self.append(right)
 
@@ -83,9 +83,8 @@ class BinaryOp(WithStyle):
 
 
 class BoolOp(BinaryOp):
-    def __init__(self, style: str, op: str, left: Element, right: Element) -> None:
-        super().__init__(style, op, left, right)
-        self.tag = self.__class__.__name__
+    # inheritance automatically sets self.__class__.__name__ to BoolOp
+    # in BinaryOp's constructor
 
     @classmethod
     def and_(cls, left: Element, right: Element) -> Self:
@@ -97,10 +96,6 @@ class BoolOp(BinaryOp):
 
 
 class Comparison(BinaryOp):
-    def __init__(self, style: str, op: str, left: Element, right: Element) -> None:
-        super().__init__(style, op, left, right)
-        self.tag = self.__class__.__name__
-
     @classmethod
     def eq(cls, left: Element, right: Element) -> Self:
         return cls("op-eq", "=", left, right)
@@ -122,55 +117,56 @@ class Comparison(BinaryOp):
         return cls("op-gte", "ge", left, right)
 
 
-def Not(inner: Element):
-    el = WithStyle(Not.__name__, "op-not")
-    el.append(inner)
-    return el
+class Not(WithStyle):
+    def __init__(self, inner: Element) -> None:
+        super().__init__("op-not")
+        self.append(inner)
 
 
-def Program(name: str):
-    return ET.Element(Program.__name__, {"name": name})
+class Program(Element):
+    def __init__(self, name: str) -> None:
+        super().__init__({"name": name})
 
 
-def SetActivationGroup(number: int, value: Element):
-    el = ET.Element(SetActivationGroup.__name__, {"style": "set-ag"})
-    el.append(Constant.from_number(number))
-    el.append(value)
-    return el
+class SetActivationGroup(WithStyle):
+    def __init__(self, number: int, value: Element) -> None:
+        super().__init__("set-ag")
+        self.append(Constant.from_number(number))
+        self.append(value)
 
 
-def Variables(variables: list[str]):
-    el = ET.Element(Variables.__name__)
-    for var in variables:
-        el.append(ET.Element("Variable", {"name": var, "number": "0"}))
-    return el
+class Variables(Element):
+    def __init__(self, variables: list[str]) -> None:
+        super().__init__()
+        for var in variables:
+            self.append(ET.Element("Variable", {"name": var, "number": "0"}))
 
 
-def Expressions():
-    return ET.Element("Expressions")
+class Expressions(Element):
+    pass
 
 
-def Variable(name: str, *, is_list: bool = False, is_local: bool = False):
-    return ET.Element(
-        Variable.__name__,
-        {
-            "list": str(is_list).lower(),
-            "local": str(is_local).lower(),
-            "variableName": name,
-        },
-    )
+class Variable(Element):
+    def __init__(self, name: str, *, is_list: bool = False, is_local: bool = False):
+        super().__init__(
+            {
+                "list": str(is_list).lower(),
+                "local": str(is_local).lower(),
+                "variableName": name,
+            }
+        )
 
 
-def SetVariable(name: str, expr: Element, *, is_local: bool = False):
-    el = WithStyle(SetVariable.__name__, "set-variable")
-    el.append(Variable(name, is_local=is_local))
-    el.append(expr)
-    return el
+class SetVariable(WithStyle):
+    def __init__(self, name: str, expr: Element, *, is_local: bool = False) -> None:
+        super().__init__("set-variable")
+        self.append(Variable(name, is_local=is_local))
+        self.append(expr)
 
 
-def Vector(x: Element, y: Element, z: Element):
-    el = WithStyle(Vector.__name__, "vec")
-    el.append(x)
-    el.append(y)
-    el.append(z)
-    return el
+class Vector(WithStyle):
+    def __init__(self, x: Element, y: Element, z: Element) -> None:
+        super().__init__("vec")
+        self.append(x)
+        self.append(y)
+        self.append(z)
