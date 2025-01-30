@@ -26,6 +26,12 @@ class Function:
     def __hash__(self) -> int:
         return hash(self.name)
 
+    def __eq__(self, value: object) -> bool:
+        if isinstance(value, Function):
+            return self.name == value.name
+
+        return False
+
 
 @dataclass
 class Target:
