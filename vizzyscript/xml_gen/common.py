@@ -1,4 +1,3 @@
-from .expr import Constant, Variable
 import xml.etree.ElementTree as ET
 
 

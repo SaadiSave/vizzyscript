@@ -25,6 +25,16 @@ class Constant(Element):
         return bool_const
 
 
+class ActivationGroup(WithStyle):
+    def __init__(self, n: Element) -> None:
+        super().__init__("activation-group")
+        self.append(n)
+
+    @classmethod
+    def fixed(cls, n: int) -> Self:
+        return cls(Constant.from_number(n))
+
+
 class BinaryOp(WithStyle):
     def __init__(self, style: str, op: str, left: Element, right: Element) -> None:
         super().__init__(style, {"op": op})

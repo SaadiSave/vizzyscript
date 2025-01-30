@@ -1,4 +1,5 @@
-from .common import Constant, Element, Instructions, WithStyle
+from .common import Instructions, WithStyle, Element
+from .expr import Constant
 
 
 class Event(WithStyle):
