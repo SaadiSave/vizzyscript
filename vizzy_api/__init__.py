@@ -7,6 +7,7 @@ from .craft_instructions import *
 
 # refresh using [e for e in dir(vizzy_api) if "__" not in e]
 __all__ = [
+    "AG",
     "AG1",
     "AG10",
     "AG2",

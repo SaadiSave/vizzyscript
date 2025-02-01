@@ -15,9 +15,9 @@ class If(WithStyle):
 
 
 class SetActivationGroup(WithStyle):
-    def __init__(self, number: int, value: Element) -> None:
+    def __init__(self, ag: Element, value: Element) -> None:
         super().__init__("set-ag")
-        self.append(Constant.from_number(number))
+        self.append(ag)
         self.append(value)
 
 

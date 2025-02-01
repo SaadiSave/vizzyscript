@@ -10,3 +10,7 @@ def test_one():
     p.generate()
     ET.indent(p.root)
     sys.stdout.buffer.write(ET.tostring(p.root, encoding="utf-8", xml_declaration=True))
+
+
+if __name__ == "__main__":
+    test_one()

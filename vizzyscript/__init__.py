@@ -42,10 +42,18 @@ class Target:
         self.threads.append(f)
 
 
+class RemoveGlobal(ast.NodeTransformer):
+    """
+    Remove `global` statements needed to declare AGs
+    """
+    def visit_Global(self, node: ast.Global):
+        return None
+
+
 class Program:
     def __init__(self, tree: ast.AST) -> None:
         assert isinstance(tree, ast.Module)
-        self.tree: ast.Module = tree
+        self.tree: ast.Module = RemoveGlobal().visit(tree)
         self.functions: set[Function] = set()
         self.threads: dict[str, Target] = {
             trigger: Target([]) for trigger in normal_triggers
